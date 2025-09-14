@@ -4,7 +4,7 @@ from .database import Base
 class Contacts(Base):
     __tablename__  ='contacts'
 
-    id = Column(Integer , primary_key=True)
+    id = Column(Integer, primary_key=True, index=True)
     name = Column(String , nullable=False)
     email = Column(String, nullable=False)
     phone = Column(String,nullable=False)
