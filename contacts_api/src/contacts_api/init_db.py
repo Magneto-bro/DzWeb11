@@ -1,5 +1,5 @@
 from contacts_api.database import Base, engine
-from contacts_api import models
+from . import models
 
 print("Creating tables...")
 Base.metadata.create_all(bind=engine)
