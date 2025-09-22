@@ -1,0 +1,30 @@
+
+services:
+  db:
+    image: postgres:16
+    container_name: contacts_db
+    restart: always
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: contacts
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build: .
+    container_name: contacts_api
+    restart: always
+    env_file: .env
+    command: uvicorn contacts_api.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./src:/app/src
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

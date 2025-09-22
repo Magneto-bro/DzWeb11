@@ -1,4 +1,4 @@
-from contacts_api.database import Base, engine
+from .database import Base, engine
 from . import models
 
 print("Creating tables...")

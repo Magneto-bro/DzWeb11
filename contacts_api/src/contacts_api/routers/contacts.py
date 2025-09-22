@@ -7,7 +7,8 @@ from .. import models, schemas
 from fastapi import HTTPException
 import asyncio
 from ..services.auth import auth_service
-
+from ..main import limiter
+from fastapi import Request
 router = APIRouter(prefix='/contacts', tags=['contacts'])
 
 @router.post('/', response_model=Contact)
@@ -19,9 +20,15 @@ async def create_contact(
     return crud.create_contact(body, db, current_user)
 
 
-@router.get("/", response_model=list[Contact])
-def read_contacts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: models.User = Depends(auth_service.get_current_user)):
-    return crud.get_contacts_by_user(db, current_user.id, skip, limit)
+@router.post('/', response_model=Contact)
+@limiter.limit("5/minute")  
+async def create_contact(
+    request: Request,
+    body: ContactCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth_service.get_current_user)  
+):  
+    return crud.create_contact(body, db, current_user)
 
 @router.get("/{contact_id}", response_model=schemas.Contact)
 def read_contact(contact_id: int, db: Session = Depends(get_db)):

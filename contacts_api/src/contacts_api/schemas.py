@@ -1,4 +1,4 @@
-from pydantic import BaseModel ,Field
+from pydantic import BaseModel ,Field ,EmailStr
 from datetime import date ,datetime
 from typing import Optional
 
@@ -24,7 +24,7 @@ class Contact(ContactBase):
 
 class UserModel(BaseModel):
     username: str = Field(min_length=5, max_length=16)
-    email: str
+    email: EmailStr
     password: str = Field(min_length=6, max_length=10)
 
 

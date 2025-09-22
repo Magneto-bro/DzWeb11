@@ -77,7 +77,32 @@ class Auth:
         user = await repository_users.get_user_by_email(email, db)
         if user is None:
             raise credentials_exception
+        if not user.is_verified: 
+            raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email not verified. Action forbidden."
+        )
+
+
         return user
-
-
+    
+    async def create_email_token(self,data:dict,expires_delta:Optional[float] = None):
+        to_encode = data.copy()
+        if expires_delta:
+            expire = datetime.utcnow() + timedelta(seconds= expires_delta)
+        else:
+            expire = datetime.utcnow() + timedelta(hours=24)
+        to_encode.update({"iat":datetime.utcnow(),"exp":expire,"scope":"email_verify"})
+        encoded = jwt.encode(to_encode,self.SECRET_KEY,algorithm=self.ALGORITHM)
+        return encoded
+    
+    async def decode_email_token(self,token:str):
+        try:
+            payload = jwt.decode(token,self.SECRET_KEY,algorithms=[self.ALGORITHM])
+            if payload.get("scope") !="email_verify":
+                raise HTTPException(status_code=401,detail="Invalid token scope")
+            return payload.get("sub")
+        except JWTError            :
+            raise HTTPException(status_code=401,detail="Could not validate token")
 auth_service = Auth()
+
