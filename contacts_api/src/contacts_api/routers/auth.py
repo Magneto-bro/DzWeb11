@@ -30,6 +30,22 @@ env = Environment(loader=FileSystemLoader(str(BASE_DIR)), autoescape=True)
 
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def signup(body: UserModel, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """ 
+    Реэстрація користувача
+    Argus: 
+        body (ContactCreate): Дані нового контакту.
+        background_tasks (BackgroundTasks): Список фонових задач .
+        db (Session, optional): Поточний користувач.
+        
+
+    Returns:
+        dict: Інформація про користувача та повідомлення про перевірку пошти.
+
+    Raises:
+        HTTPException: 409, якщо користувач з таким email вже існує.
+
+        """
+    
     exist_user = await repository_users.get_user_by_email(body.email, db)
     if exist_user:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Account already exists")
@@ -47,6 +63,20 @@ async def signup(body: UserModel, background_tasks: BackgroundTasks, db: Session
     return {"user": new_user, "detail": "User successfully created. Check email for verification"}
 @router.post("/login", response_model=TokenModel)
 async def login(body: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+
+    """
+    Вхід користувача (авторизація).
+
+    Args:
+        body (OAuth2PasswordRequestForm): Логін і пароль.
+        db (Session, optional): Сесія бази даних.
+
+    Returns:
+        dict: JWT токени (access і refresh).
+
+    Raises:
+        HTTPException: 401, якщо email або пароль невірні.
+    """
     user = await repository_users.get_user_by_email(body.username, db)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email")
@@ -61,6 +91,19 @@ async def login(body: OAuth2PasswordRequestForm = Depends(), db: Session = Depen
 
 @router.get('/refresh_token', response_model=TokenModel)
 async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(security), db: Session = Depends(get_db)):
+    """
+    Оновлення токенів доступу.
+
+    Args:
+        credentials (HTTPAuthorizationCredentials): Токен авторизації.
+        db (Session, optional): Сесія бази даних.
+
+    Returns:
+        dict: Нові JWT токени.
+
+    Raises:
+        HTTPException: 401, якщо refresh-токен недійсний.
+    """
     token = credentials.credentials
     email = await auth_service.decode_refresh_token(token)
     user = await repository_users.get_user_by_email(email, db)
@@ -75,6 +118,19 @@ async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(sec
 
 @router.get("/verify", response_class=HTMLResponse)
 async def verify_email(token: str, db: Session = Depends(get_db)):
+    """
+    Підтвердження email через токен.
+
+    Args:
+        token (str): Токен з email.
+        db (Session, optional): Сесія бази даних.
+
+    Returns:
+        HTMLResponse: HTML сторінка з результатом перевірки.
+
+    Raises:
+        HTTPException: 404, якщо користувач не знайдений.
+    """
     email = await auth_service.decode_email_token(token)
     user = await repository_users.get_user_by_email(email, db)
 
@@ -93,6 +149,20 @@ async def verify_email(token: str, db: Session = Depends(get_db)):
 
 @router.post("/resend-verify")
 async def resend_verification(body:dict,background_tasks:BackgroundTasks,db:Session =Depends(get_db)):
+    """
+    Повторна відправка листа для підтвердження email.
+
+    Args:
+        body (dict): Словник з ключем "email".
+        background_tasks (BackgroundTasks): Список фонових задач.
+        db (Session, optional): Сесія бази даних.
+
+    Returns:
+        dict: Повідомлення про відправку листа.
+
+    Raises:
+        HTTPException: 404, якщо користувач не знайдений.
+    """
     email =body.get("email")
     user = await repository_users.get_user_by_email(email,db)
     if not user:
@@ -110,6 +180,20 @@ async def update_avatar(
     current_user =Depends(auth_service.get_current_user),
     db: Session =Depends(get_db)
 ):
+    """
+    Оновлення аватара користувача.
+
+    Args:
+        file (UploadFile): Завантажений файл зображення.
+        current_user (User): Поточний користувач.
+        db (Session, optional): Сесія бази даних.
+
+    Returns:
+        dict: URL нового аватара.
+
+    Raises:
+        HTTPException: 400, якщо виникла помилка при завантаженні.
+    """
     try:
         result = cloudinary_config.cloudinary.uploader.upload(
             file.file,

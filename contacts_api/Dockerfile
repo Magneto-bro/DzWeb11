@@ -12,4 +12,6 @@ RUN pip install --no-cache-dir poetry \
 
 COPY ./src /app/src
 
-CMD ["uvicorn", "contacts_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.contacts_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+

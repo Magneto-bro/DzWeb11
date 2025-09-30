@@ -20,7 +20,7 @@ services:
     env_file: .env
     command: uvicorn contacts_api.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
-      - ./src:/app/src
+       - ./src/contacts_api:/app/contacts_api
     ports:
       - "8000:8000"
     depends_on:
